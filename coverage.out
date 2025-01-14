@@ -1,8 +1,4 @@
-mode: set
-product/hayo.go:15.35,34.41 10 0
-product/hayo.go:34.41,41.3 4 0
-product/hayo.go:44.2,44.42 1 0
-product/hayo.go:44.42,51.3 4 0
+mode: count
 product/main.go:19.13,21.35 1 0
 product/main.go:21.35,22.41 1 0
 product/main.go:22.41,24.4 1 0
