@@ -30,6 +30,27 @@ func main() {
 	// Initialize the router
 	router := mux.NewRouter()
 
+	// Setup routes
+	SetupRoutes(router)
+
+	// CORS settings
+	corsHandler := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*", "http://localhost:3000", "http://127.0.0.1:5502", "https://yayasann.vercel.app"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		AllowCredentials: true,
+		Debug:            true,
+	})
+
+	// Start the server
+	log.Println("Server is running on port 8080")
+	if err := http.ListenAndServe(":8080", corsHandler.Handler(router)); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
+}
+
+// Fungsi untuk mengatur rute dan middleware
+func SetupRoutes(router *mux.Router) {
 	// User routes
 	router.HandleFunc("/users", user.GetUsers).Methods("GET")
 	router.HandleFunc("/users", user.AddUser).Methods("POST")
@@ -42,37 +63,32 @@ func main() {
 	router.HandleFunc("/verify", auth.VerifyEmail).Methods("GET")
 
 	// Category routes
-	router.HandleFunc("/category/{category}", controller.GetDataByCategory).Methods("GET")
+	router.HandleFunc("/category/{category}", category.GetDataByCategory).Methods("GET")
 
-	// // Admin category routes
-	// router.HandleFunc("/admin-category", categoryAdmin.GetCategoryAdmins).Methods("GET")
-	// router.HandleFunc("/admin-category", auth.JWTAuth(categoryAdmin.AddCategoryAdmin)).Methods("POST")
-	// router.HandleFunc("/admin-category/{id}", auth.JWTAuth(categoryAdmin.UpdateCategoryAdmin)).Methods("PUT")
-	// router.HandleFunc("/admin-category/{id}", auth.JWTAuth(categoryAdmin.DeleteCategoryAdmin)).Methods("DELETE")
-
-	// Donation routes
-	// router.HandleFunc("/donations", donation.GetDonations).Methods("GET")
 	// Donation routes
 	router.HandleFunc("/donations", donation.GetAllDonations).Methods("GET")
 	router.HandleFunc("/donations/{id}", donation.GetDonationByID).Methods("GET")
-	router.HandleFunc("/donations", auth.JWTAuth(donation.AddDonation)).Methods("POST") // JWT middleware diterapkan
-	router.HandleFunc("/donations/{id}", donation.UpdateDonation).Methods("PUT")        
-	router.HandleFunc("/donations/{id}", donation.DeleteDonation).Methods("DELETE")     
+	router.HandleFunc("/donations", auth.JWTAuth(donation.AddDonation)).Methods("POST")
+	router.HandleFunc("/donations/{id}", donation.UpdateDonation).Methods("PUT")
+	router.HandleFunc("/donations/{id}", donation.DeleteDonation).Methods("DELETE")
+}
 
+// Fungsi handler untuk Vercel
+func Handler(w http.ResponseWriter, r *http.Request) {
+	router := mux.NewRouter()
+
+	// Setup routes
+	SetupRoutes(router)
 
 	// CORS settings
-	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000", "http://127.0.0.1:5502", "https://yayasann.vercel.app"},
+	corsHandler := cors.New(cors.Options{
+		AllowedOrigins:   []string{"https://yayasann-sipatir08s-projects.vercel.app", "http://localhost:8080/donations", "http://localhost:3000", "http://127.0.0.1:5502", "https://yayasann.vercel.app", "*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,
 		Debug:            true,
 	})
 
-	// Apply CORS to the router
-	handler := c.Handler(router)
-
-	// Start the server
-	log.Println("Starting server on :8080")
-	log.Fatal(http.ListenAndServe(":8080", handler))
+	// Apply CORS middleware
+	corsHandler.Handler(router).ServeHTTP(w, r)
 }
