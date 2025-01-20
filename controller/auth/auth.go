@@ -104,7 +104,7 @@ func generateVerificationToken(email string) string {
 func sendVerificationEmail(toEmail, verificationToken string) error {
 	apiKey := os.Getenv("SENDGRID_API_KEY")
 
-	verificationLink := "http://localhost:8080/verify?token=" + verificationToken
+	verificationLink := "https://yayasan-three.vercel.app/verify?token=" + verificationToken
 
 	from := mail.NewEmail("Your App", "fathir080604@gmail.com")
 	to := mail.NewEmail("User", toEmail)

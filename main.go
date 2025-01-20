@@ -1,9 +1,8 @@
-package main
+package handler
 
 import (
 	"log"
 	"net/http"
-	"os"
 
 	"product/controller/auth"
 	"product/controller/category"
@@ -12,45 +11,33 @@ import (
 	"product/database"
 
 	"github.com/gorilla/mux"
-	"github.com/joho/godotenv"
 	"github.com/rs/cors"
 )
 
-func main() {
-	// Load environment variables
-	if os.Getenv("VERCEL_ENV") == "" {
-		if err := godotenv.Load(); err != nil {
-			log.Fatal("Error loading .env file")
-		}
-	}
-
-	// Initialize the database
+func init() {
+	// Inisialisasi database saat server dimulai
 	database.InitDB()
+}
 
-	// Initialize the router
-	router := mux.NewRouter()
-
-	// Setup routes
-	SetupRoutes(router)
-
-	// CORS settings
+// Handler function yang digunakan oleh Vercel
+func Handler(w http.ResponseWriter, r *http.Request) {
+	// Inisialisasi router dengan middleware CORS
+	router := SetupRoutes()
 	corsHandler := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*", "http://localhost:3000", "http://127.0.0.1:5502", "https://yayasann.vercel.app"},
+		AllowedOrigins:   []string{"http://127.0.0.1:5501", "https://yayasann-sipatir08s-projects.vercel.app/"}, // Disesuaikan
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
-		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		AllowedHeaders:   []string{"Authorization", "Content-Type"},
 		AllowCredentials: true,
-		Debug:            true,
-	})
+	}).Handler(router)
 
-	// Start the server
-	log.Println("Server is running on port 8080")
-	if err := http.ListenAndServe(":8080", corsHandler.Handler(router)); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
-	}
+	// Lanjutkan permintaan ke router
+	corsHandler.ServeHTTP(w, r)
 }
 
 // Fungsi untuk mengatur rute dan middleware
-func SetupRoutes(router *mux.Router) {
+func SetupRoutes() *mux.Router {
+	router := mux.NewRouter()
+
 	// User routes
 	router.HandleFunc("/users", user.GetUsers).Methods("GET")
 	router.HandleFunc("/users", user.AddUser).Methods("POST")
@@ -71,24 +58,15 @@ func SetupRoutes(router *mux.Router) {
 	router.HandleFunc("/donations", auth.JWTAuth(donation.AddDonation)).Methods("POST")
 	router.HandleFunc("/donations/{id}", donation.UpdateDonation).Methods("PUT")
 	router.HandleFunc("/donations/{id}", donation.DeleteDonation).Methods("DELETE")
+
+	return router
 }
 
-// Fungsi handler untuk Vercel
-func Handler(w http.ResponseWriter, r *http.Request) {
-	router := mux.NewRouter()
+// Main function untuk menjalankan server lokal (opsional, tidak diperlukan untuk Vercel)
+func main() {
+	database.InitDB()
 
-	// Setup routes
-	SetupRoutes(router)
-
-	// CORS settings
-	corsHandler := cors.New(cors.Options{
-		AllowedOrigins:   []string{"https://yayasann-sipatir08s-projects.vercel.app", "http://localhost:8080/donations", "http://localhost:3000", "http://127.0.0.1:5502", "https://yayasann.vercel.app", "*"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
-		AllowedHeaders:   []string{"Content-Type", "Authorization"},
-		AllowCredentials: true,
-		Debug:            true,
-	})
-
-	// Apply CORS middleware
-	corsHandler.Handler(router).ServeHTTP(w, r)
+	http.HandleFunc("/", Handler)
+	log.Println("Starting server on :8080")
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
