@@ -1,4 +1,4 @@
-package handler
+package main
 
 import (
 	"log"
@@ -24,7 +24,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	// Inisialisasi router dengan middleware CORS
 	router := SetupRoutes()
 	corsHandler := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://127.0.0.1:5501", "https://yayasann-sipatir08s-projects.vercel.app/"}, // Disesuaikan
+		AllowedOrigins:   []string{"http://127.0.0.1:5501", "https://yayasann-sipatir08s-projects.vercel.app"}, // Disesuaikan
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
 		AllowedHeaders:   []string{"Authorization", "Content-Type"},
 		AllowCredentials: true,
